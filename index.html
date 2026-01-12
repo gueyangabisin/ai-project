@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Fan Control - Fuzzy Logic</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts for Premium Feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons for modern iconography -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Navbar -->
+        <nav class="navbar glass-panel">
+            <div class="logo">
+                <i class="ph-fill ph-fan"></i>
+                <span>Smart Fan Control</span>
+            </div>
+            <div class="mode-toggle">
+                <span class="mode-label">Mode:</span>
+                <label class="switch">
+                    <input type="checkbox" id="modeSwitch" checked>
+                    <span class="slider round"></span>
+                </label>
+                <span id="currentMode" class="active-mode-text">AUTO (Fuzzy)</span>
+            </div>
+        </nav>
+
+        <!-- Main Content Grid -->
+        <main class="main-grid">
+            <!-- Left Panel: Fan Visualization -->
+            <section class="fan-visual-panel glass-panel">
+                <div class="fan-container">
+                    <div class="fan-housing">
+                        <div class="fan-blades" id="fanBlades">
+                            <div class="blade blade-1"></div>
+                            <div class="blade blade-2"></div>
+                            <div class="blade blade-3"></div>
+                            <div class="center-hub"></div>
+                        </div>
+                        <div class="fan-stand"></div>
+                        <div class="fan-base"></div>
+                    </div>
+                </div>
+                <div class="fan-status-display">
+                    <br>
+                    <br>
+                    <h1>Status Kipas</h1>
+                    <div class="status-metric">
+                        <span class="label">Kecepatan</span>
+                        <span class="value" id="speedValue">0%</span>
+                    </div>
+                    <div class="status-metric">
+                        <span class="label">Kategori</span>
+                        <span class="value" id="speedCategory">Mati</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Controls -->
+            <section class="controls-panel glass-panel">
+                <div class="control-group">
+                    <div class="control-header">
+                        <i class="ph ph-thermometer"></i>
+                        <h3>Input Suhu</h3>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-info">
+                            <span>15°C</span>
+                            <span class="current-value" id="tempDisplay">27°C</span>
+                            <span>40°C</span>
+                        </div>
+                        <input type="range" min="15" max="40" value="27" class="slider-input temp-slider"
+                            id="tempInput">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-header">
+                        <i class="ph ph-drop"></i>
+                        <h3>Input Kelembapan</h3>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-info">
+                            <span>0%</span>
+                            <span class="current-value" id="humDisplay">50%</span>
+                            <span>100%</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="50" class="slider-input hum-slider" id="humInput">
+                    </div>
+                </div>
+
+                <div class="control-group" id="manualControlGroup" style="opacity: 0.5; pointer-events: none;">
+                    <div class="control-header">
+                        <i class="ph ph-sliders-horizontal"></i>
+                        <h3>Kontrol Manual</h3>
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-info">
+                            <span>0%</span>
+                            <span class="current-value" id="manualSpeedDisplay">0%</span>
+                            <span>100%</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="0" class="slider-input speed-slider"
+                            id="manualSpeedInput" disabled>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bottom Panel: Fuzzy Logic Internals -->
+            <section class="fuzzy-panel glass-panel">
+                <div class="panel-header">
+                    <i class="ph ph-brain"></i>
+                    <h2>Fuzzy Logic Engine Status</h2>
+                </div>
+
+                <div class="fuzzy-grid">
+                    <!-- Fuzzification -->
+                    <div class="fuzzy-card">
+                        <h3>1. Fuzzifikasi</h3>
+                        <p class="description">Derajat keanggotaan input.</p>
+
+                        <!-- Temp Bars -->
+                        <h4 style="font-size: 0.9rem; margin-bottom: 8px;">Suhu</h4>
+                        <div class="membership-bars" style="margin-bottom: 16px;">
+                            <div class="mm-bar-group">
+                                <label>Dingin (<span id="uDingin">0.00</span>)</label>
+                                <div class="bar-bg">
+                                    <div class="bar-fill cold" id="barDingin" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="mm-bar-group">
+                                <label>Normal (<span id="uNormal">0.00</span>)</label>
+                                <div class="bar-bg">
+                                    <div class="bar-fill normal" id="barNormal" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="mm-bar-group">
+                                <label>Panas (<span id="uPanas">0.00</span>)</label>
+                                <div class="bar-bg">
+                                    <div class="bar-fill hot" id="barPanas" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hum Bars -->
+                        <h4 style="font-size: 0.9rem; margin-bottom: 8px;">Kelembapan</h4>
+                        <div class="membership-bars">
+                            <div class="mm-bar-group">
+                                <label>Kering (<span id="uKering">0.00</span>)</label>
+                                <div class="bar-bg">
+                                    <div class="bar-fill cold" id="barKering" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="mm-bar-group">
+                                <label>Normal (<span id="uLembapNormal">0.00</span>)</label>
+                                <div class="bar-bg">
+                                    <div class="bar-fill normal" id="barLembapNormal" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="mm-bar-group">
+                                <label>Basah (<span id="uBasah">0.00</span>)</label>
+                                <div class="bar-bg">
+                                    <div class="bar-fill hot" id="barBasah" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inference -->
+                    <div class="fuzzy-card">
+                        <h3>2. Evaluasi Aturan (Rule Base)</h3>
+                        <p class="description">Aturan aktif yang menentukan output.</p>
+                        <ul class="rule-list" id="activeRulesList">
+                            <!-- JS will populate this -->
+                            <li class="rule-item inactive">Menunggu input...</li>
+                        </ul>
+                    </div>
+
+                    <!-- Defuzzification -->
+                    <div class="fuzzy-card highlight-card">
+                        <h3>3. Defuzzifikasi</h3>
+                        <div class="defuz-result">
+                            <div class="result-icon">
+                                <i class="ph-fill ph-lightning"></i>
+                            </div>
+                            <div class="result-text">
+                                <span class="label">Output PWM / Kecepatan</span>
+                                <span class="giant-text" id="fuzzyOutput">0</span>
+                                <span class="unit">%</span>
+                            </div>
+                        </div>
+                        <p class="method-badge">Metode: Center of Gravity (COG)</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="fuzzy.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
